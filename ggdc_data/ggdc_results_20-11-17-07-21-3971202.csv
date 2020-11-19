@@ -1,0 +1,4 @@
+,,Formula 1,,,,Formula 2,,,,Formula 3,,,,G+C difference
+Query genome,Reference genome,DDH,Model C.I.,Distance,Prob. DDH >= 70%,DDH,Model C.I.,Distance,Prob. DDH >= 70%,DDH,Model C.I.,Distance,Prob. DDH >= 70%,
+GQ999983,JX976646-JX976652,100.00,[100 - 100%],0.0009,99.61,98.30,[97.5 - 98.8%],0.0027,97.91,100.00,[100 - 100%],0.0036,99.99,0.35
+GQ999983,JX976659-JX976669,100.00,[100 - 100%],0.0006,99.61,96.30,[95 - 97.3%],0.0052,97.49,100.00,[99.9 - 100%],0.0057,99.98,0.20
