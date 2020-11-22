@@ -16,12 +16,27 @@ class DisimilarityMatrix :
 	def __init__(self, sample_ids) :
 		self.sample_ids = sample_ids
 		self.matrix = {pair: None for pair in combinations(self.sample_ids, 2)}
+
+	# returns none for invalid pair
+	def getKey(self, id1, id2) :
+		key = (id1, id2) if (id1, id2) in self.matrix else (id2, id1)
+		if key in self.matrix :
+			return key
+		else :
+			return None
 		
 	def add(self, sample_pair, dist) :
-		key = sample_pair if sample_pair in self.matrix else (sample_pair[1], sample_pair[0])
-		assert key in self.matrix, "Invalid pair passed to DisimilarityMatrix.add"
+		key = self.getKey(sample_pair[0], sample_pair[1])
+		assert key, "Invalid pair passed to DisimilarityMatrix.add"
 		assert not self.matrix[key], "Attempting to overwrite disimilarity matrix entry"
 		self.matrix[key] = dist
+	
+	def get(self, id1, id2) :
+		if(id1 == id2) :
+			return 0
+		key = self.getKey(id1, id2)
+		assert key, "Invalid key: " + str((id1, id2))
+		return self.matrix[key]
 	
 	def __str__(self) :
 		res = ""
@@ -32,6 +47,50 @@ class DisimilarityMatrix :
 				assert pair in self.matrix, "Invalid pair in DisimilarityMatrix.__str__"
 				res += self.matrix[pair] + " "
 			res += "0\n"
+			if y == 0 :
+				res = res[:-1] + "".join([" "] * (len(self.sample_ids) - 1)) + "\n"
+		return res
+
+	def toDataFrame(self) :
+		headerNames = {id: "s." + id.replace("-",".") for id in self.sample_ids}
+		res = ","
+		res += ",".join([headerNames[id] for id in self.sample_ids]) + "\n"
+		for x in self.sample_ids :
+			res += headerNames[x] + ","
+			for y in self.sample_ids :
+				res += str(self.get(x,y)) + ","
+			res = res[:-1] + "\n"
+		return res
+
+	def toLongDataFrame(self) :
+		# patient1, days, patient2, days, distance
+		res = "patient.1,days.1,patient.2,days.2,dist\n"
+		for x in self.sample_ids :
+			for y in self.sample_ids :
+				res += x.replace("-",",") + "," + y.replace("-",",") + ","
+				res += str(self.get(x,y)) + "\n"
+		return res
+
+	def toTimeDataFrame(self):
+		day_data = {}
+		for x in self.sample_ids:
+			patient, day = x.split("-")
+			if not patient in day_data:
+				day_data[patient] = []
+			day_data[patient].append(int(day))
+
+		patient_firsts = {id: min(days) for (id, days) in day_data.items()}
+		for patient, days in day_data.items() :
+			days.remove(min(days))
+		
+		res = "patient,days,dist\n"
+		for patient, days in day_data.items() :
+			f_id = str(patient) + "-" + str(patient_firsts[patient])
+			for day in days :
+				c_id = str(patient) + "-" + str(day)
+				dist = self.get(f_id, c_id)
+				res += ",".join([str(patient), str(day), str(dist)]) + "\n"
+		
 		return res
 
 
@@ -81,9 +140,18 @@ for data_filename in ggdc_data_filenames :
 			r_id = sample_ids[ref_asc]
 			mat.add((q_id, r_id), d["f2-dist"])
 
+# output matrix 
 with open("disimilarity_matrix.txt", "w") as outfile :
 	outfile.write(str(mat))
 			
+# output dataframe 
+with open("distance_matrix.csv", "w") as outfile :
+	outfile.write(mat.toDataFrame())
 
-
+# output long dataframe 
+with open("long_distance_matrix.csv", "w") as outfile :
+	outfile.write(mat.toLongDataFrame())
 	
+# output time dataframe 
+with open("time_distance_matrix.csv", "w") as outfile :
+	outfile.write(mat.toTimeDataFrame())
